@@ -619,8 +619,8 @@ ngFileUpload.service('Upload', ['$parse', '$timeout', '$compile', '$q', 'UploadE
         if (validateAfterResize) {
           upload.validate(allNewFiles, keep ? prevValidFiles.length : 0, ngModel, attr, scope)
             .then(function (validationResult) {
-              valids = validationResult.validsFiles;
-              invalids = validationResult.invalidsFiles;
+              valids = validationResult.validFiles;
+              invalids = validationResult.invalidFiles;
               updateModel();
             });
         } else {
@@ -818,7 +818,7 @@ ngFileUpload.directive('ngfSelect', ['$parse', '$timeout', '$compile', 'Upload',
         if (!isInputTypeFile() && !document.body.contains(fileElem[0])) {
           generatedElems.push({el: elem, ref: fileElem.parent()});
           document.body.appendChild(fileElem.parent()[0]);
-          fileElem.bind('change', changeFn);
+          fileElem.on('change', changeFn);
         }
       } catch (e) {/*ignore*/
       }
@@ -874,12 +874,12 @@ ngFileUpload.directive('ngfSelect', ['$parse', '$timeout', '$compile', 'Upload',
     if (!isInputTypeFile()) {
       fileElem = createFileInput();
     }
-    fileElem.bind('change', changeFn);
+    fileElem.on('change', changeFn);
 
     if (!isInputTypeFile()) {
-      elem.bind('click touchstart touchend', clickHandler);
+      elem.on('click touchstart touchend', clickHandler);
     } else {
-      elem.bind('click', resetModel);
+      elem.on('click', resetModel);
     }
 
     function ie10SameFileSelectFix(evt) {
@@ -890,13 +890,13 @@ ngFileUpload.directive('ngfSelect', ['$parse', '$timeout', '$compile', 'Upload',
         }
         evt.preventDefault();
         evt.stopPropagation();
-        fileElem.unbind('click');
+        fileElem.off('click');
         var clone = fileElem.clone();
         fileElem.replaceWith(clone);
         fileElem = clone;
         fileElem.attr('__ngf_ie10_Fix_', 'true');
-        fileElem.bind('change', changeFn);
-        fileElem.bind('click', ie10SameFileSelectFix);
+        fileElem.on('change', changeFn);
+        fileElem.on('click', ie10SameFileSelectFix);
         fileElem[0].click();
         return false;
       } else {
@@ -905,7 +905,7 @@ ngFileUpload.directive('ngfSelect', ['$parse', '$timeout', '$compile', 'Upload',
     }
 
     if (navigator.appVersion.indexOf('MSIE 10') !== -1) {
-      fileElem.bind('click', ie10SameFileSelectFix);
+      fileElem.on('click', ie10SameFileSelectFix);
     }
 
     if (ngModel) ngModel.$formatters.push(function (val) {
@@ -1674,14 +1674,15 @@ ngFileUpload.service('UploadValidate', ['UploadDataUrl', '$q', '$timeout', funct
 
         el.on('loadedmetadata', success);
         el.on('error', error);
+        
         var count = 0;
-
         function checkLoadError() {
+          count++;
           $timeout(function () {
             if (el[0].parentNode) {
               if (el[0].duration) {
                 success();
-              } else if (count > 10) {
+              } else if (count++ > 10) {
                 error();
               } else {
                 checkLoadError();
